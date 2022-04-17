@@ -1,0 +1,291 @@
+conexao.php
+<?php
+    $conn = new PDO("mysql:dbname=clientes; host=localhost","root",;
+------------------------------------------------------------------------------------------------------------------------------
+Crud.php
+
+<?php
+class Crud
+{
+    private $connect;
+    private $nome;
+    private $email;
+    private $idade;
+    
+    function __construct($con){
+
+        $this->connect = $con;
+    }
+
+    public function setDados($nome,$mail,$idade){
+        $this->nome= $nome;
+        $this->email=$mail;
+        $this->idade=$idade;
+    }
+        public function insertDados(){
+            
+                $sql = $this->connect->prepare("INSERT INTO clientes(nome,idade,email, data_now)VALUES(?,?,?,CURRENT_TIMESTAMP)");
+                $sql->bindParam(1,$this->nome);
+                $sql->bindParam(2,$this->idade);
+                $sql->bindParam(3,$this->email);
+    
+                $sql->execute();
+                
+               echo "Dados inseridos";
+
+               
+            
+           
+        }
+        public function readInfo($id=null){
+            if(isset($id)){
+                 $sql = $this->connect->prepare("SELECT * FROM clientes WHERE id = ?");
+
+                $sql->bindValue(1,"$id");
+    
+                $sql->execute();
+    
+                $result = $sql->fetch(PDO::FETCH_OBJ);
+    
+                return $result;
+            }else{
+               $this->getAll();
+            
+        }
+    }
+        public function pesquisaInfo($nome=null){
+            if(isset($nome)){
+                 $sql = $this->connect->prepare("SELECT * FROM clientes WHERE nome LIKE ?");
+
+                $sql->bindValue(1,"%$nome%");
+    
+                $sql->execute();
+    
+                $result = $sql->fetchAll(PDO::FETCH_ASSOC);
+    
+                return $result;
+            }else{
+               $this->getAll();
+            
+        }
+    }
+
+            public function getAll(){
+
+                $sql = $this->connect->query("SELECT * FROM clientes");
+                return $sql->fetchAll();
+            }
+               
+
+        public function updateDados($id,$nome,$idade,$email){
+            $sql = $this->connect->prepare("UPDATE clientes SET nome = ?, email = ?, idade = ? WHERE id = ?");
+            
+            $sql->bindValue(1,$nome,PDO::PARAM_STR);
+            $sql->bindValue(2,$email,PDO::PARAM_STR);
+            $sql->bindValue(3,$idade,PDO::PARAM_STR);
+            $sql->bindValue(4,$id,PDO::PARAM_STR);
+
+            $sql->execute();
+             
+            echo "dados alterados";
+        
+        }
+
+        public function deleteDados($id){
+            $sql = $this->connect->prepare("DELETE FROM clientes WHERE id = ?");
+            $sql->bindValue(1,$id);
+            $sql->execute();
+            echo "dados deletados";
+          
+            
+        }
+      
+    }
+------------------------------------------------------------------------------------------------------------------
+delete.php
+<?php
+  include_once("conexao.php");
+  include_once("Crud.php");
+  
+  extract($_GET);
+  $obj = new Crud($conn);
+
+  $obj->deleteDados($id);
+--------------------------------------------------------------------------------------------------------------------
+formEdit.php
+<?php
+include_once("conexao.php");
+include_once("Crud.php");
+
+extract($_GET);
+
+$obj = new Crud($conn);
+
+$dado = $obj->readInfo($id);
+
+
+?>
+
+<body>
+  
+<form action="update.php" method="post">
+
+  <p> Nome: <input type="text" name="nome" value="<?=$dado->nome;?>"></p>
+  <p> Idade: <input type="number" name="idade" value="<?=$dado->idade;?>"></p>
+
+  <p> E-mail: <input type="text" name="mail" value="<?=$dado->email;?>"></p>
+  <input type="hidden" name="id" value="<?=$dado->id;?>">
+
+  <button type="submit" name="alterarDados">Alterar Dados</button>
+
+</form>
+</body>
+---------------------------------------------------------------------------------------------------------------
+formInsert.php
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar dados dos clientes</title>
+</head>
+<body>
+    <header> Cadastrar dados dos clientes</header>
+    <section>
+        <form action="insert.php" method="post">
+            
+            <p>Nome: <input type="text" name="nome"></p>
+            <p>E-mail: <Input type="email" name="mail"></Input></p>
+            <p>Idade: <input type="number" name="idade"></p>
+
+            <button type="submit"> Inserir Dados </button>
+        </form>
+    </section>
+</body>
+</html>
+---------------------------------------------------------------------------------------------------
+formReadInfo.php
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pesquisar por Nome</title>
+</head>
+<body>
+    <form action="readInfo.php" method="post">
+    <p>Digite o nome do cliente para a pesquisa</p>
+    <input type="text" name="nomeCliente">
+    <button type="submit">Pesquisar</button>
+   </form>
+</body>
+</html>
+-------------------------------------------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD Banco de Dados</title>
+</head>
+<body>
+    <header> Selecione a operação com o Banco de Dados</header>
+    <section>
+        <div>
+            <a href="formInsert.php" id="insert">Inserir - Create/Insert</a>
+        </div>
+        <div>
+            <a href="formReadInfo.php" id="read">Visualizar - Read - Pesquisar</a>
+        </div>
+        <div>
+            <a href="readAllUpdate.php" id="update"> Ver todos - Atualizar</a>
+        </div>
+        <div>
+            <a href="readAllDelete.php" id="delete"> Ver todos - Deletar</a>
+        </div>
+    </section>
+</body>
+</html>
+--------------------------------------------------------------------------------------------------------
+insert.php
+<?php
+include_once("conexao.php");
+include_once("Crud.php");
+
+extract($_POST);
+
+$obj = new Crud($conn);
+
+$obj->setDados($nome,$mail,$idade);
+
+$obj->insertDados();
+-----------------------------------------------------------------------------------------------------------
+readDelete.php
+<?php
+include_once("conexao.php");
+include_once("Crud.php");
+
+$obj = new Crud($conn);
+
+$obj->readInfo();
+
+$dado = $obj->getAll();
+
+echo "<body><table border='1'>";
+echo "<tr> <th> Nome</th><th> Idade </th> <th> E-mail </th><th> Data</th><th> Deletar </th></tr>";
+
+foreach($dado as $info){
+    echo "<tr><td>".$info['nome']."</td>
+    <td>".$info['idade']."</td>
+    <td>".$info['email']."</td>
+    <td>".$info['data_now']."</td>
+    <td><a href=delete.php?id=".$info['id'].">Deletar</a></td></tr>";
+
+    
+}
+echo "</table></body>";
+
+-----------------------------------------------------------------------------------------------------------------
+readUpdate.php
+<?php
+include_once("conexao.php");
+include_once("Crud.php");
+
+$obj = new Crud($conn);
+
+$obj->readInfo();
+
+$dado = $obj->getAll();
+
+echo "<body><table border='1' id='tabela'>";
+echo "<tr> <th> Nome</th><th> Idade </th> <th> E-mail </th><th> Data</th><th> Editar </th></tr>";
+
+foreach($dado as $info){
+    echo "<tr><td>".$info['nome']."</td>
+    <td>".$info['idade']."</td>
+    <td>".$info['email']."</td>
+    <td>".$info['data_now']."</td>
+    <td><a href=formEdit.php?id=".$info['id'].">Editar</a></td></tr>";
+
+    
+}
+echo "</table></body>";
+------------------------------------------------------------------------------------------------
+readInfo.php
+<?php
+include_once("conexao.php");
+include_once("Crud.php");
+extract($_POST);
+
+ $obj = new Crud($conn);
+ $dado = $obj->pesquisaInfo($nomeCliente);
+
+echo "<body><table border='1'>";
+echo "<tr><th> id </th> <th> Nome</th><th> Idade </th> <th> E-mail </th><th> Data</th></tr>";
+
+foreach($dado as $info){
+    echo "<tr><td>".$info['id']."</td>
+    <td>".$info['nome']."</td>
+    <td>".$info['idade']."</td>
+    <td>".$info['email']."</td>
+    <td>".$info['data_now']."</td></tr>";
+
+}
+echo "</table></body>";
